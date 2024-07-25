@@ -59,4 +59,11 @@ class AuthService
 
         return ['user' => $user, 'token' => $token, 'status' => 200];
     }
+
+    public function logout($user)
+    {
+        $user->tokens()->delete();
+
+        return ['message' => 'Logged out Successfully.', 'status' => 200];
+    }
 }

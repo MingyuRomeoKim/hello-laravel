@@ -23,7 +23,7 @@ class AuthController extends Controller
         $result = $this->authService->register($request->all());
 
         if (isset($result['errors'])) {
-            return response()->json($result['errors'], $result['status']);
+            return response()->json(['errors' => $result['errors']], $result['status']);
         }
 
         return response()->json(['user' => $result['user'], 'token' => $result['token']], $result['status']);
@@ -34,7 +34,7 @@ class AuthController extends Controller
         $result = $this->authService->login($request->all());
 
         if (isset($result['errors'])) {
-            return response()->json($result['errors'], $result['status']);
+            return response()->json(['errors' => $result['errors']], $result['status']);
         }
 
         if (isset($result['message'])) {
@@ -42,5 +42,12 @@ class AuthController extends Controller
         }
 
         return response()->json(['user' => $result['user'], 'token' => $result['token']], $result['status']);
+    }
+
+    public function logout(Request $request)
+    {
+        $result = $this->authService->logout($request->user());
+
+        return response()->json(['message' => $result['message']], $result['status']);
     }
 }
