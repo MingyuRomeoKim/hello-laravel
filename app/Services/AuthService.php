@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Repositories\UserRepository;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
@@ -55,9 +56,12 @@ class AuthService
             return ['message' => 'Invalid credentials', 'status' => 401];
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $tokenResult = $user->createToken('auth_token');
+        $token = $tokenResult->accessToken;
+        $token->expires_at = Carbon::now()->addMinute(1); // Test를 위한 1분
+        $token->save();
 
-        return ['user' => $user, 'token' => $token, 'status' => 200];
+        return ['user' => $user, 'token' => $tokenResult->plainTextToken, 'status' => 200];
     }
 
     public function logout($user)

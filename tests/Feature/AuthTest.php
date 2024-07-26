@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Repositories\UserRepository;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Hash;
@@ -136,5 +137,45 @@ class AuthTest extends TestCase
         ])->getJson("/api/v1/user");
 
         $response->assertStatus(200);
+    }
+
+    public function test_user_can_access_with_valid_token(): void
+    {
+
+        $user = User::factory()->create([
+            'email' => self::_TEST_MAIL_,
+            'password' => Hash::make('password'),
+        ]);
+
+        $tokenResult = $user->createToken('auth_token');
+        $token = $tokenResult->accessToken;
+        $token->expires_at = Carbon::now()->addHours(1); // 1시간 후 만료
+        $token->save();
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $tokenResult->plainTextToken,
+        ])->getJson("/api/v1/testTokenExpires");
+
+        $response->assertStatus(200);
+    }
+
+    public function test_user_cannot_access_with_expired_token(): void
+    {
+        $user = User::factory()->create([
+            'email' => self::_TEST_MAIL_,
+            'password' => Hash::make('password'),
+        ]);
+
+        $tokenResult = $user->createToken('auth_token');
+        $token = $tokenResult->accessToken;
+        $token->expires_at = Carbon::now()->subHour(); // 1시간 전 만료
+        $token->save();
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $tokenResult->plainTextToken,
+        ])->getJson("/api/v1/testTokenExpires");
+
+        $response->assertStatus(401)
+            ->assertJson(['message' => 'Token has expired.']);
     }
 }
