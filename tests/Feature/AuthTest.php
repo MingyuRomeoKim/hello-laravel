@@ -9,6 +9,7 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
+use function Laravel\Prompts\select;
 
 class AuthTest extends TestCase
 {
@@ -106,5 +107,34 @@ class AuthTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonStructure(['message']);
+    }
+
+    public function test_user_cannot_access_userData_without_login(): void
+    {
+        $response = $this->getJson("/api/v1/user");
+
+        $response->assertStatus(401); // Unauthorized
+    }
+
+    public function test_user_can_access_userData_with_login(): void
+    {
+        $user = User::factory()->create([
+            'email' => self::_TEST_MAIL_,
+            'password' => Hash::make('password')
+        ]);
+
+        $loginResponse = $this->postJson("/api/v1/login", [
+            'email' => self::_TEST_MAIL_,
+            'password' => 'password'
+        ]);
+
+        $loginResponse->assertStatus(200);
+        $token = $loginResponse['token'];
+
+        $response = $this->withHeaders([
+           'Authorization' => 'Bearer '. $token,
+        ])->getJson("/api/v1/user");
+
+        $response->assertStatus(200);
     }
 }
